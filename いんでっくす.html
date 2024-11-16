@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ホワイトボード</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Dancing+Script&display=swap" rel="stylesheet">
+    <style>
+        /* 基本スタイル */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-between;
+            background-color: #fff;
+            width: 90%;
+            max-width: 1200px;
+            padding: 20px;
+            border: 5px solid #333;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+            background-image: url('https://cdn.pixabay.com/photo/2018/02/28/07/34/whiteboard-3184324_960_720.jpg');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .left-column, .center-column, .right-column {
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 30%;
+            margin-right: 20px;
+        }
+
+        .message {
+            background-color: #f0f8ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-family: 'Pacifico', cursive;
+        }
+
+        .date-today {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            font-family: 'Dancing Script', cursive;
+        }
+
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            text-align: center;
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+
+        .calendar div {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+        }
+
+        .calendar .today {
+            background-color: #ffeb3b;
+            font-weight: bold;
+        }
+
+        /* タイマー */
+        #timer-display {
+            font-size: 30px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .timer button {
+            padding: 10px;
+            margin: 5px;
+            font-size: 16px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .timer button:hover {
+            background-color: #45a049;
+        }
+
+        .goal-timer {
+            margin-top: 20px;
+            background-color: #f9f9f9;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+        }
+
+        /* アニメーション */
+        @keyframes slideIn {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(0); }
+        }
+
+        .container {
+            animation: slideIn 0.5s ease-out;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- 左側：応援メッセージ -->
+        <div class="left-column">
+            <div class="date-today" id="current-date"></div> <!-- 今日の日付を表示 -->
+            <div class="message">
+                <h3>今日も来てくれてありがとう^口^</h3>
+                <p>勉強のコツ: 小さな目標を設定して、達成するたびに自分を褒めよう！</p>
+            </div>
+        </div>
+
+        <!-- 中央：カレンダー -->
+        <div class="center-column">
+            <h2>今月のカレンダー</h2>
+            <div class="calendar" id="calendar"></div>
+        </div>
+
+        <!-- 右側：タイマーと目標 -->
+        <div class="right-column">
+            <h3>勉強タイマー</h3>
+            <div id="timer">
+                <div id="timer-display">0分 0秒</div>
+                <button id="start-10">10分</button>
+                <button id="start-25">25分</button>
+                <button id="start-80">80分</button>
+                <button id="pause" style="display:none;">一時停止</button>
+                <button id="stop" style="display:none;">終了</button>
+            </div>
+
+            <h3>目標</h3>
+            <div class="goal-timer">
+                <h4>目標日: <input type="date" id="goal-date" value="2024-12-31"></h4>
+                <p id="time-left">残り日数: </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 今日の日付を表示
+        const currentDateElement = document.getElementById('current-date');
+        const targetDateElement = document.getElementById('goal-date');
+        const timeLeftElement = document.getElementById('time-left');
+
+        const currentDate = new Date();
+        const currentDateString = currentDate.toLocaleDateString('ja-JP');
+        currentDateElement.textContent = `今日の日付: ${currentDateString}`;
+
+        // 目標日
+        const targetDate = new Date(targetDateElement.value);
+        const timeDifference = targetDate - currentDate;
+
+        // 残り日数を表示
+        const daysLeft = Math.ceil(timeDifference / (1000 * 3600 * 24));
+        timeLeftElement.textContent = `残り日数: ${daysLeft}日`;
+
+        // 現実のカレンダーを表示
+        const calendarElement = document.getElementById('calendar');
+        const month = currentDate.getMonth(); // 現在の月
+        const year = currentDate.getFullYear(); // 現在の年
+
+        // 1ヶ月分のカレンダーを作成
+        const firstDay = new Date(year, month, 1).getDay();
+        const lastDate = new Date(year, month + 1, 0).getDate(); // 月末の日付
+
+        let calendarHtml = '';
+        for (let i = 0; i < firstDay; i++) {
+            calendarHtml += '<div></div>'; // 先頭に空のセル
+        }
+        for (let date = 1; date <= lastDate; date++) {
+            const dateClass = (date === currentDate.getDate()) ? 'today' : 'date';
+            calendarHtml += `<div class="${dateClass}">${date}</div>`;
+        }
+        calendarElement.innerHTML = calendarHtml;
+
+        // タイマー機能
+        let timerInterval;
+        let timeRemaining;
+        let isPaused = false;
+
+        // タイマーの開始
+        const startTimer = (minutes) => {
+            if (timerInterval) return; // タイマーがすでに動いていたら新しく開始しない
+            timeRemaining = minutes * 60; // 秒単位に変換
+            document.getElementById('pause').style.display = 'inline-block';
+            document.getElementById('stop').style.display = 'inline-block';
+
+            timerInterval = setInterval(() => {
+                if (timeRemaining <= 0) {
+                    clearInterval(timerInterval);
+                    timerInterval = null; // タイマー終了後にリセット
+                    document.getElementById('timer-display').textContent = "時間終了";
+                    document.getElementById('pause').style.display = 'none';
+                    document.getElementById('stop').style.display = 'none';
+                } else {
+                    const minutes = Math.floor(timeRemaining / 60);
+                    const seconds = timeRemaining % 60;
+                    document.getElementById('timer-display').textContent = `${minutes}分 ${seconds}秒`;
+                    timeRemaining--;
+                }
+            }, 1000);
+        };
+
+        document.getElementById('start-10').addEventListener('click', () => startTimer(10));
+        document.getElementById('start-25').addEventListener('click', () => startTimer(25));
+        document.getElementById('start-80').addEventListener('click', () => startTimer(80));
+
+        // 一時停止ボタン
+        document.getElementById('pause').addEventListener('click', () => {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            isPaused = true;
+            document.getElementById('pause').style.display = 'none';
+        });
+
+        // 終了ボタン
+        document.getElementById('stop').addEventListener('click', () => {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            document.getElementById('timer-display').textContent = "タイマー終了";
+            document.getElementById('pause').style.display = 'none';
+            document.getElementById('stop').style.display = 'none';
+        });
+    </script>
+</body>
+</html>
